@@ -1,18 +1,7 @@
 import React from 'react';
-import gql from 'graphql-tag';
-import { Query } from 'react-apollo';
+import { Query, graphql } from 'react-apollo';
 import { ApolloError } from 'apollo-client';
-
-const GET_FEED = gql`
-  {
-    postsByUser(email: "bob@prisma.io") {
-      id,
-      title,
-      published,
-      archived
-    }
-  }
-`;
+import { GET_FEED, PUBLUSH, UNPUBLUSH } from './queries';
 
 type Post = { id: string; title: string; published: boolean; archived: boolean; };
 
@@ -28,6 +17,15 @@ const Error: React.FC<{ error: ApolloError | undefined }> = ({error}) => {
   return null
 }
 
+const Publish =  graphql<{ id: string; }>(PUBLUSH)(({ id, mutate }) => (
+  <button onClick={() => mutate && mutate({ variables: { id } })}>Publush</button>
+)) as any;
+
+const Unpublish =  graphql<{ id: string; }>(UNPUBLUSH)(({ id, mutate }) => (
+  <button onClick={() => mutate && mutate({ variables: { id } })}>Unublush</button>
+)) as any;
+
+
 const List: React.FC<{ data: Data | undefined }> = ({ data }) => {
   if (data && data.postsByUser) {
     return (
@@ -36,7 +34,9 @@ const List: React.FC<{ data: Data | undefined }> = ({ data }) => {
           <li key={idx}>
             <strong>id:</strong>  {id}><br />
             <strong>title:</strong>  {title}><br />
-            <strong>publushed:</strong>  {published ? '👍' : '👎'}
+            <strong>publushed:</strong>  {published ? '👍' : '👎'}<br />
+            <Publish id={id} />
+            <Unpublish id={id} />
           </li>
         )}
       </ul>
@@ -47,7 +47,7 @@ const List: React.FC<{ data: Data | undefined }> = ({ data }) => {
 }
 
 const Feed: React.FC = () => (
-  <Query<Data> query={GET_FEED}>
+  <Query<Data> query={GET_FEED} variables={{ email: 'bob@prisma.io' }}>
       {({ error, data }) => (
         <React.Suspense fallback={() => <h1>loading...</h1>}>
           <List data={data} />
